@@ -56,7 +56,11 @@ export function buildStatus(
   settings: PeriodSettings,
 ): TaskStatus {
   const doneSlots = distinctSlots(task, completions);
-  const recorded = new Set(numberRecords.filter((r) => r.periodKey === period.key).map((r) => r.typeId));
+  const recorded = new Set(
+    numberRecords
+      .filter((r) => (r.periodKey ?? periodOf(task.recurrence, dayjs(r.date), settings).key) === period.key)
+      .map((r) => r.typeId),
+  );
   return {
     task,
     period,

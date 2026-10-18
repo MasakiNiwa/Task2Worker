@@ -1,15 +1,25 @@
 import dayjs from 'dayjs';
 import { db, newId } from '@/db/db';
 import type { NumberRecord, NumberType } from '@/db/types';
+import { getSettings } from '@/features/settings/store';
+import { periodOf } from '@/features/tasks/period';
 
 export async function createNumberType(input: Pick<NumberType, 'name' | 'description'>): Promise<string> {
   const last = await db.numberTypes.orderBy('order').last();
   const id = newId();
-  await db.numberTypes.add({ ...input, id, order: (last?.order ?? 0) + 1, createdAt: Date.now() });
+  await db.numberTypes.add({
+    ...input,
+    id,
+    order: (last?.order ?? 0) + 1,
+    createdAt: Date.now(),
+  });
   return id;
 }
 
-export async function updateNumberType(id: string, patch: Partial<Pick<NumberType, 'name' | 'description'>>): Promise<void> {
+export async function updateNumberType(
+  id: string,
+  patch: Partial<Pick<NumberType, 'name' | 'description'>>,
+): Promise<void> {
   await db.numberTypes.update(id, patch);
 }
 
@@ -26,14 +36,38 @@ export async function deleteNumberType(id: string): Promise<void> {
 
 export type NumberRecordInput = Omit<NumberRecord, 'id' | 'createdAt'>;
 
+async function withPeriod(input: NumberRecordInput): Promise<NumberRecordInput> {
+  const task = input.taskId ? await db.tasks.get(input.taskId) : undefined;
+  return {
+    ...input,
+    periodKey: task ? (input.periodKey ?? periodOf(task.recurrence, dayjs(input.date), getSettings()).key) : undefined,
+  };
+}
+
 export async function addNumberRecord(input: NumberRecordInput): Promise<string> {
   const id = newId();
-  await db.numberRecords.add({ ...input, value: input.value.trim(), id, createdAt: Date.now() });
+  await db.numberRecords.add({
+    ...(await withPeriod(input)),
+    value: input.value.trim(),
+    id,
+    createdAt: Date.now(),
+  });
   return id;
 }
 
 export async function updateNumberRecord(id: string, patch: Partial<NumberRecordInput>): Promise<void> {
-  await db.numberRecords.update(id, patch.value === undefined ? patch : { ...patch, value: patch.value.trim() });
+  const current = await db.numberRecords.get(id);
+  if (!current) return;
+  const input = { ...current, ...patch };
+  if (input.taskId !== current.taskId || input.date !== current.date) {
+    input.periodKey = undefined;
+    input.completionId = undefined;
+  }
+  const normalized = await withPeriod(input);
+  await db.numberRecords.update(id, {
+    ...normalized,
+    value: normalized.value.trim(),
+  });
 }
 
 export async function deleteNumberRecord(id: string): Promise<void> {

@@ -19,7 +19,13 @@ interface Props {
   defaults?: Partial<NumberRecordInput>;
 }
 
-type FormValues = { typeId: string; value: string; memo: string; date: string; taskId: string };
+type FormValues = {
+  typeId: string;
+  value: string;
+  memo: string;
+  date: string;
+  taskId: string;
+};
 
 function toValues(record?: NumberRecord, defaults?: Partial<NumberRecordInput>): FormValues {
   const src = record ?? defaults ?? {};
@@ -57,8 +63,8 @@ export function NumberRecordModal({ opened, onClose, record, defaults }: Props) 
 
   const submit = form.onSubmit(async (v) => {
     const base = record ?? defaults ?? {};
-    // 関連タスクを変えた場合は、元のタスクの期間・実施記録との紐付けを外す
-    const sameTask = (base.taskId ?? '') === v.taskId;
+    // 関連タスク・日付を変えた場合は、元の期間・実施記録との紐付けを外す
+    const sameTask = (base.taskId ?? '') === v.taskId && (!base.date || base.date === v.date);
     const input: NumberRecordInput = {
       periodKey: sameTask ? base.periodKey : undefined,
       completionId: sameTask ? base.completionId : undefined,
@@ -70,7 +76,9 @@ export function NumberRecordModal({ opened, onClose, record, defaults }: Props) 
     };
     if (record) await updateNumberRecord(record.id, input);
     else await addNumberRecord(input);
-    notifications.show({ message: record ? '番号を更新しました' : '番号を記録しました' });
+    notifications.show({
+      message: record ? '番号を更新しました' : '番号を記録しました',
+    });
     onClose();
   });
 
