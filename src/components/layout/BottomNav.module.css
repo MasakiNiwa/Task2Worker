@@ -1,0 +1,22 @@
+.bar {
+  display: flex;
+  height: 100%;
+}
+
+.item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  text-decoration: none;
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
+  transition: color 120ms ease;
+}
+
+.active {
+  color: light-dark(var(--mantine-color-sage-7), var(--mantine-color-sage-4));
+  font-weight: 600;
+}
