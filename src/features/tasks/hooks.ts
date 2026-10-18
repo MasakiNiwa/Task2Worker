@@ -7,7 +7,8 @@ import type { Completion, Task } from '@/db/types';
 import { useSettings } from '@/features/settings/store';
 import { useNow } from '@/hooks/useNow';
 import { groupBy } from '@/lib/collections';
-import { logicalDate, periodOf, type Period, type PeriodSettings } from './period';
+import { logicalDate, periodOf, previousPeriod, type Period, type PeriodSettings } from './period';
+import { missedPreviousPeriod } from './stats';
 
 export interface TaskStatus {
   task: Task;
@@ -16,6 +17,8 @@ export interface TaskStatus {
   doneSlots: Set<number>;
   doneCount: number;
   completed: boolean;
+  /** 前の期間をやり残したか */
+  previousMissed: boolean;
 }
 
 export function usePeriodSettings(): PeriodSettings {
@@ -37,8 +40,19 @@ export function useToday(): Dayjs {
   return useMemo(() => dayjs(key), [key]);
 }
 
-export function buildStatus(task: Task, period: Period, completions: Completion[]): TaskStatus {
-  const doneSlots = new Set(completions.filter((c) => c.slot < task.timesPerPeriod).map((c) => c.slot));
+function distinctSlots(task: Task, completions: Completion[]): Set<number> {
+  return new Set(completions.filter((c) => c.slot < task.timesPerPeriod).map((c) => c.slot));
+}
+
+export function buildStatus(
+  task: Task,
+  period: Period,
+  completions: Completion[],
+  previousCompletions: Completion[],
+  today: Dayjs,
+  settings: PeriodSettings,
+): TaskStatus {
+  const doneSlots = distinctSlots(task, completions);
   return {
     task,
     period,
@@ -46,7 +60,14 @@ export function buildStatus(task: Task, period: Period, completions: Completion[
     doneSlots,
     doneCount: doneSlots.size,
     completed: doneSlots.size >= task.timesPerPeriod,
+    previousMissed: missedPreviousPeriod(task, distinctSlots(task, previousCompletions).size, today, settings),
   };
+}
+
+/** タスクの今の期間と前の期間 */
+function periodsOf(task: Task, today: Dayjs, settings: PeriodSettings): [Period, Period] {
+  const current = periodOf(task.recurrence, today, settings);
+  return [current, previousPeriod(task.recurrence, current, settings)];
 }
 
 /** 全タスクの「今の期間」での実施状況 */
@@ -58,13 +79,23 @@ export function useTaskStatuses(options: { includeArchived?: boolean } = {}): Ta
   return useLiveQuery(async () => {
     const all = await db.tasks.orderBy('order').toArray();
     const tasks = includeArchived ? all : all.filter((t) => !t.archived);
-    const periods = new Map(tasks.map((t) => [t.id, periodOf(t.recurrence, today, settings)]));
+    const periods = new Map(tasks.map((t) => [t.id, periodsOf(t, today, settings)]));
     const completions = await db.completions
       .where('[taskId+periodKey]')
-      .anyOf(tasks.map((t) => [t.id, periods.get(t.id)!.key]))
+      .anyOf(tasks.flatMap((t) => periods.get(t.id)!.map((p) => [t.id, p.key])))
       .toArray();
-    const byTask = groupBy(completions, (c) => c.taskId);
-    return tasks.map((t) => buildStatus(t, periods.get(t.id)!, byTask.get(t.id) ?? []));
+    const byTaskPeriod = groupBy(completions, (c) => `${c.taskId}|${c.periodKey}`);
+    return tasks.map((t) => {
+      const [current, previous] = periods.get(t.id)!;
+      return buildStatus(
+        t,
+        current,
+        byTaskPeriod.get(`${t.id}|${current.key}`) ?? [],
+        byTaskPeriod.get(`${t.id}|${previous.key}`) ?? [],
+        today,
+        settings,
+      );
+    });
   }, [today, settings.weekStartsOn, settings.fiscalYearStartMonth, settings.dayStartHour, includeArchived]);
 }
 
@@ -75,9 +106,10 @@ export function useTaskStatus(taskId: string | undefined): TaskStatus | null | u
     if (!taskId) return null;
     const task = await db.tasks.get(taskId);
     if (!task) return null;
-    const period = periodOf(task.recurrence, today, settings);
-    const completions = await db.completions.where({ taskId, periodKey: period.key }).toArray();
-    return buildStatus(task, period, completions);
+    const [current, previous] = periodsOf(task, today, settings);
+    const completions = await db.completions.where({ taskId, periodKey: current.key }).toArray();
+    const previousCompletions = await db.completions.where({ taskId, periodKey: previous.key }).toArray();
+    return buildStatus(task, current, completions, previousCompletions, today, settings);
   }, [taskId, today, settings.weekStartsOn, settings.fiscalYearStartMonth, settings.dayStartHour]);
 }
 
