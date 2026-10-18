@@ -1,4 +1,6 @@
-import { Button, Group, Modal, NumberInput, Select, Stack, TagsInput, Textarea, TextInput } from '@mantine/core';
+import { Anchor, Button, Group, Modal, MultiSelect, NumberInput, Select, Stack, TagsInput, Textarea, TextInput } from '@mantine/core';
+import { Link } from 'react-router-dom';
+import { useNumberTypes } from '@/features/numbers/hooks';
 import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useMediaQuery } from '@mantine/hooks';
@@ -27,6 +29,7 @@ function toInput(task?: Task): TaskInput {
 
 export function TaskFormModal({ opened, onClose, task, onSaved }: Props) {
   const allTags = useAllTags();
+  const numberTypes = useNumberTypes() ?? [];
   const isMobile = useMediaQuery('(max-width: 36em)');
   const form = useForm<TaskInput>({
     initialValues: toInput(task),
@@ -87,6 +90,27 @@ export function TaskFormModal({ opened, onClose, task, onSaved }: Props) {
             )}
           </Group>
           <TagsInput label="タグ" placeholder="Enter で追加" data={allTags} clearable {...form.getInputProps('tags')} />
+          <MultiSelect
+            label="実施時に記録する番号"
+            description={
+              numberTypes.length === 0 ? (
+                <>
+                  番号の種類は「
+                  <Anchor component={Link} to="/numbers" size="xs" onClick={onClose}>
+                    番号
+                  </Anchor>
+                  」ページで作成できます
+                </>
+              ) : (
+                '実施したときに入力を促し、記録漏れを知らせます'
+              )
+            }
+            placeholder={numberTypes.length ? '例: 伝票番号' : undefined}
+            data={numberTypes.map((t) => ({ value: t.id, label: t.name }))}
+            disabled={numberTypes.length === 0}
+            clearable
+            {...form.getInputProps('numberTypeIds')}
+          />
           <Textarea
             label="中身(手順・メモ)"
             description="Markdown が使えます(- 箇条書き、**太字**、[リンク](https://...) など)"

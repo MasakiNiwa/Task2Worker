@@ -53,6 +53,11 @@ export function TaskRow({ status, showRecurrence = true }: { status: TaskStatus;
                 前回未完了
               </Badge>
             )}
+            {status.missingNumberTypeIds.length > 0 && (
+              <Badge size="xs" color="orange" variant="outline">
+                番号未記録
+              </Badge>
+            )}
             {task.archived && (
               <Badge size="xs" color="gray" variant="outline">
                 アーカイブ

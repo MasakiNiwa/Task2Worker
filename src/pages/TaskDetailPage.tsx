@@ -2,7 +2,10 @@ import { ActionIcon, Badge, Button, Card, Group, Menu, SimpleGrid, Stack, Text, 
 import { useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconArchive, IconArrowLeft, IconCheck, IconDots, IconEdit, IconRestore, IconTrash } from '@tabler/icons-react';
+import { IconAlertTriangle, IconArchive, IconArrowLeft, IconCheck, IconDots, IconEdit, IconPlus, IconRestore, IconTrash } from '@tabler/icons-react';
+import { useNumberTypeMap } from '@/features/numbers/hooks';
+import { NumberRecordRow } from '@/features/numbers/components/NumberRecordRow';
+import { useNumberRecordEditor } from '@/features/numbers/components/useNumberRecordEditor';
 import dayjs from 'dayjs';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -26,6 +29,12 @@ export function TaskDetailPage() {
   const today = useToday();
   const settings = usePeriodSettings();
   const [editing, { open: openEdit, close: closeEdit }] = useDisclosure(false);
+  const typeMap = useNumberTypeMap();
+  const numberEditor = useNumberRecordEditor();
+  const numberRecords = useLiveQuery(
+    () => (id ? db.numberRecords.where('taskId').equals(id).reverse().sortBy('date') : []),
+    [id],
+  );
   const history = useLiveQuery(
     () => (id ? db.completions.where('taskId').equals(id).reverse().sortBy('doneAt') : []),
     [id],
@@ -159,6 +168,56 @@ export function TaskDetailPage() {
         )}
       </Card>
 
+      {(task.numberTypeIds.length > 0 || (numberRecords?.length ?? 0) > 0) && (
+        <Card>
+          <Group justify="space-between" mb="sm">
+            <Title order={3} size="h5">
+              番号
+            </Title>
+            <Button
+              size="xs"
+              variant="light"
+              leftSection={<IconPlus size={14} />}
+              onClick={() =>
+                numberEditor.openNew({
+                  taskId: task.id,
+                  periodKey: period.key,
+                  typeId: status.missingNumberTypeIds[0] ?? task.numberTypeIds[0],
+                })
+              }
+            >
+              記録
+            </Button>
+          </Group>
+          {status.missingNumberTypeIds.length > 0 && (
+            <Group gap={6} mb="sm" c="orange.5">
+              <IconAlertTriangle size={16} />
+              <Text size="sm">
+                今の期間の{status.missingNumberTypeIds.map((t) => typeMap.get(t)?.name ?? '番号').join('・')}
+                がまだ記録されていません
+              </Text>
+            </Group>
+          )}
+          <Stack gap="xs">
+            {(numberRecords ?? []).slice(0, 20).map((r) => (
+              <NumberRecordRow
+                key={r.id}
+                record={r}
+                type={typeMap.get(r.typeId)}
+                task={task}
+                onEdit={numberEditor.openEdit}
+                onReuse={numberEditor.openReuse}
+              />
+            ))}
+            {numberRecords?.length === 0 && (
+              <Text size="sm" c="dimmed">
+                まだ番号は記録されていません
+              </Text>
+            )}
+          </Stack>
+        </Card>
+      )}
+
       <Card>
         <Title order={3} size="h5" mb="sm">
           実績
@@ -201,6 +260,13 @@ export function TaskDetailPage() {
                     .join('、')}
                   {task.timesPerPeriod > 1 && `(${list.length}/${task.timesPerPeriod}回)`}
                 </Text>
+                {(numberRecords ?? [])
+                  .filter((r) => r.periodKey === key)
+                  .map((r) => (
+                    <Text key={r.id} size="xs" ff="monospace">
+                      {typeMap.get(r.typeId)?.name ?? '番号'}: {r.value}
+                    </Text>
+                  ))}
               </Timeline.Item>
             ))}
           </Timeline>
@@ -208,6 +274,7 @@ export function TaskDetailPage() {
       </Card>
 
       <TaskFormModal opened={editing} onClose={closeEdit} task={task} />
+      {numberEditor.modal}
     </Stack>
   );
 }
