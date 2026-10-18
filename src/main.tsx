@@ -18,12 +18,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="dark">
       <ModalsProvider>
-        <Notifications
-          position="bottom-center"
-          limit={2}
-          autoClose={2500}
-          styles={{ root: { bottom: 'calc(72px + env(safe-area-inset-bottom))' } }}
-        />
+        <Notifications position="bottom-center" limit={2} autoClose={2500} />
         <App />
       </ModalsProvider>
     </MantineProvider>
