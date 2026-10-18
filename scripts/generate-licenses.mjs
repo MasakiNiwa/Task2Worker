@@ -24,9 +24,14 @@ const LICENSE_FILE = /^(licen[cs]e|copying)(\..*)?$/i;
 // Apache-2.0 などで再配布時に同梱が求められる NOTICE ファイル
 const NOTICE_FILE = /^notice(\..*)?$/i;
 
+// 開発依存だが成果物に同梱されるもの(Service Worker に埋め込まれる Workbox など)
+const BUNDLED_DEV = [/^node_modules\/workbox-(core|precaching|routing|strategies)$/];
+
 const entries = [];
 for (const [path, meta] of Object.entries(lock.packages ?? {})) {
-  if (!path || meta.dev || meta.devOptional || meta.link) continue;
+  if (!path || meta.link) continue;
+  const bundledDev = BUNDLED_DEV.some((re) => re.test(path));
+  if ((meta.dev || meta.devOptional) && !bundledDev) continue;
   const dir = join(root, path);
   if (!existsSync(join(dir, 'package.json'))) continue;
   const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
