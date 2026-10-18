@@ -9,7 +9,8 @@ import { db } from '@/db/db';
 import { useNumberTypes } from '@/features/numbers/hooks';
 import { createNumberType } from '@/features/numbers/repository';
 import { NumberTypeManager } from '@/features/numbers/components/NumberTypeManager';
-import { NumberRecordRow } from '@/features/numbers/components/NumberRecordRow';
+import { NumberHistoryTable } from '@/features/numbers/components/NumberHistoryTable';
+import { NumberChecklist } from '@/features/numbers/components/NumberChecklist';
 import { useNumberRecordEditor } from '@/features/numbers/components/useNumberRecordEditor';
 
 const PAGE_SIZE = 100;
@@ -18,6 +19,7 @@ export function NumbersPage() {
   const types = useNumberTypes();
   const [managing, { open: openManager, close: closeManager }] = useDisclosure(false);
   const editor = useNumberRecordEditor();
+  const [view, setView] = useState('checklist');
   const [typeFilter, setTypeFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -46,7 +48,7 @@ export function NumbersPage() {
     <>
       <PageHeader
         title="番号"
-        description="伝票番号などをタスクと紐付けて記録し、記録漏れの防止や再利用に使います"
+        description="作業と番号を表で確認し、記録漏れの防止や過去の番号の再利用に使います"
         actions={
           <>
             <Button variant="default" leftSection={<IconSettings size={16} />} onClick={openManager}>
@@ -70,7 +72,14 @@ export function NumbersPage() {
           description="伝票番号・請求書番号など、管理したい番号の種類を作成します"
           action={
             <Group mt="xs" gap="xs">
-              <Button onClick={() => createNumberType({ name: '伝票番号', description: '会計システムの伝票番号' })}>
+              <Button
+                onClick={() =>
+                  createNumberType({
+                    name: '伝票番号',
+                    description: '会計システムの伝票番号',
+                  })
+                }
+              >
                 「伝票番号」を作成
               </Button>
               <Button variant="default" onClick={openManager}>
@@ -81,22 +90,51 @@ export function NumbersPage() {
         />
       ) : (
         <Stack gap="sm">
+          <SegmentedControl
+            aria-label="番号の表示"
+            value={view}
+            onChange={setView}
+            data={[
+              { value: 'checklist', label: '作業チェック表' },
+              { value: 'history', label: '番号の履歴表' },
+            ]}
+          />
           {types.length > 1 && (
             <ScrollArea type="never">
               <SegmentedControl
                 value={activeType}
-                onChange={setTypeFilter}
+                onChange={(v) => {
+                  setTypeFilter(v);
+                  setLimit(PAGE_SIZE);
+                }}
                 data={[{ value: 'all', label: 'すべて' }, ...types.map((t) => ({ value: t.id, label: t.name }))]}
               />
             </ScrollArea>
           )}
           <TextInput
-            placeholder="番号・メモ・タスク名で検索"
+            placeholder={view === 'checklist' ? 'タスク名・作業内容・今回の番号で検索' : '番号・メモ・タスク名で検索'}
             leftSection={<IconSearch size={16} />}
             value={query}
-            onChange={(e) => setQuery(e.currentTarget.value)}
+            onChange={(e) => {
+              setQuery(e.currentTarget.value);
+              setLimit(PAGE_SIZE);
+            }}
           />
-          {filtered.length === 0 ? (
+          <Button
+            variant="subtle"
+            size="compact-sm"
+            style={{ alignSelf: 'flex-start' }}
+            onClick={() => {
+              setQuery('');
+              setTypeFilter('all');
+              setLimit(PAGE_SIZE);
+            }}
+          >
+            検索をクリア
+          </Button>
+          {view === 'checklist' ? (
+            <NumberChecklist types={types} editor={editor} query={query} typeFilter={activeType} />
+          ) : filtered.length === 0 ? (
             <Text c="dimmed" size="sm">
               {records.length === 0 ? 'まだ番号の記録はありません。' : '条件に一致する番号はありません。'}
             </Text>
@@ -105,17 +143,13 @@ export function NumbersPage() {
               <Text size="xs" c="dimmed">
                 {filtered.length}件
               </Text>
-              {filtered.slice(0, limit).map((r) => (
-                <NumberRecordRow
-                  key={r.id}
-                  record={r}
-                  type={typeMap.get(r.typeId)}
-                  task={r.taskId ? taskMap.get(r.taskId) : undefined}
-                  showType={activeType === 'all' && types.length > 1}
-                  onEdit={editor.openEdit}
-                  onReuse={editor.openReuse}
-                />
-              ))}
+              <NumberHistoryTable
+                records={filtered.slice(0, limit)}
+                types={typeMap}
+                tasks={taskMap}
+                onEdit={editor.openEdit}
+                onReuse={editor.openReuse}
+              />
               {filtered.length > limit && (
                 <Button variant="subtle" onClick={() => setLimit((l) => l + PAGE_SIZE)}>
                   さらに表示
