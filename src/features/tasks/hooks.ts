@@ -3,7 +3,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { db } from '@/db/db';
-import type { Completion, Task } from '@/db/types';
+import type { Completion, NumberRecord, Task } from '@/db/types';
 import { useSettings } from '@/features/settings/store';
 import { useNow } from '@/hooks/useNow';
 import { groupBy } from '@/lib/collections';
@@ -19,6 +19,8 @@ export interface TaskStatus {
   completed: boolean;
   /** 前の期間をやり残したか */
   previousMissed: boolean;
+  /** 今の期間に実施したのに、まだ記録していない番号の種類 */
+  missingNumberTypeIds: string[];
 }
 
 export function usePeriodSettings(): PeriodSettings {
@@ -49,10 +51,12 @@ export function buildStatus(
   period: Period,
   completions: Completion[],
   previousCompletions: Completion[],
+  numberRecords: NumberRecord[],
   today: Dayjs,
   settings: PeriodSettings,
 ): TaskStatus {
   const doneSlots = distinctSlots(task, completions);
+  const recorded = new Set(numberRecords.filter((r) => r.periodKey === period.key).map((r) => r.typeId));
   return {
     task,
     period,
@@ -61,6 +65,7 @@ export function buildStatus(
     doneCount: doneSlots.size,
     completed: doneSlots.size >= task.timesPerPeriod,
     previousMissed: missedPreviousPeriod(task, distinctSlots(task, previousCompletions).size, today, settings),
+    missingNumberTypeIds: doneSlots.size > 0 ? task.numberTypeIds.filter((id) => !recorded.has(id)) : [],
   };
 }
 
@@ -85,6 +90,11 @@ export function useTaskStatuses(options: { includeArchived?: boolean } = {}): Ta
       .anyOf(tasks.flatMap((t) => periods.get(t.id)!.map((p) => [t.id, p.key])))
       .toArray();
     const byTaskPeriod = groupBy(completions, (c) => `${c.taskId}|${c.periodKey}`);
+    const numberRecords = await db.numberRecords
+      .where('taskId')
+      .anyOf(tasks.filter((t) => t.numberTypeIds.length).map((t) => t.id))
+      .toArray();
+    const recordsByTask = groupBy(numberRecords, (r) => r.taskId);
     return tasks.map((t) => {
       const [current, previous] = periods.get(t.id)!;
       return buildStatus(
@@ -92,6 +102,7 @@ export function useTaskStatuses(options: { includeArchived?: boolean } = {}): Ta
         current,
         byTaskPeriod.get(`${t.id}|${current.key}`) ?? [],
         byTaskPeriod.get(`${t.id}|${previous.key}`) ?? [],
+        recordsByTask.get(t.id) ?? [],
         today,
         settings,
       );
@@ -109,7 +120,8 @@ export function useTaskStatus(taskId: string | undefined): TaskStatus | null | u
     const [current, previous] = periodsOf(task, today, settings);
     const completions = await db.completions.where({ taskId, periodKey: current.key }).toArray();
     const previousCompletions = await db.completions.where({ taskId, periodKey: previous.key }).toArray();
-    return buildStatus(task, current, completions, previousCompletions, today, settings);
+    const numberRecords = await db.numberRecords.where('taskId').equals(taskId).toArray();
+    return buildStatus(task, current, completions, previousCompletions, numberRecords, today, settings);
   }, [taskId, today, settings.weekStartsOn, settings.fiscalYearStartMonth, settings.dayStartHour]);
 }
 

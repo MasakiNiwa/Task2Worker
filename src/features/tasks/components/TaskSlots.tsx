@@ -3,6 +3,7 @@ import { IconCheck } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import type { TaskStatus } from '../hooks';
 import { completeSlot, uncompleteSlot } from '../repository';
+import { promptNumbersAfterCompletion } from '@/features/numbers/components/NumberPrompt';
 
 /** 期間内の実施回数ぶんのチェックボタン。押すと実施/取り消しを切り替える */
 export function TaskSlots({ status, size = 'lg' }: { status: TaskStatus; size?: 'md' | 'lg' }) {
@@ -28,7 +29,7 @@ export function TaskSlots({ status, size = 'lg' }: { status: TaskStatus; size?: 
               onClick={(e) => {
                 e.stopPropagation();
                 if (done) void uncompleteSlot(task.id, period.key, slot);
-                else void completeSlot(task.id, period.key, slot);
+                else void completeSlot(task.id, period.key, slot).then((c) => promptNumbersAfterCompletion(task, c));
               }}
             >
               {done ? <IconCheck size={18} stroke={2.4} /> : task.timesPerPeriod > 1 ? slot + 1 : null}
