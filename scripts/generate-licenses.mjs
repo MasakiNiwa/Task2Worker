@@ -21,6 +21,8 @@ function normalizeRepo(repo) {
 }
 
 const LICENSE_FILE = /^(licen[cs]e|copying)(\..*)?$/i;
+// Apache-2.0 などで再配布時に同梱が求められる NOTICE ファイル
+const NOTICE_FILE = /^notice(\..*)?$/i;
 
 const entries = [];
 for (const [path, meta] of Object.entries(lock.packages ?? {})) {
@@ -28,7 +30,9 @@ for (const [path, meta] of Object.entries(lock.packages ?? {})) {
   const dir = join(root, path);
   if (!existsSync(join(dir, 'package.json'))) continue;
   const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-  const licenseFile = readdirSync(dir).find((f) => LICENSE_FILE.test(f));
+  const files = readdirSync(dir);
+  const licenseFile = files.find((f) => LICENSE_FILE.test(f));
+  const noticeFile = files.find((f) => NOTICE_FILE.test(f));
   const repository =
     typeof pkg.repository === 'string' ? pkg.repository : (pkg.repository?.url ?? '');
   entries.push({
@@ -37,7 +41,10 @@ for (const [path, meta] of Object.entries(lock.packages ?? {})) {
     license: typeof pkg.license === 'string' ? pkg.license : (pkg.license?.type ?? 'UNKNOWN'),
     author: typeof pkg.author === 'string' ? pkg.author : (pkg.author?.name ?? ''),
     homepage: pkg.homepage ?? normalizeRepo(repository),
-    licenseText: licenseFile ? readFileSync(join(dir, licenseFile), 'utf8').trim() : '',
+    licenseText: [licenseFile, noticeFile]
+      .filter(Boolean)
+      .map((f) => readFileSync(join(dir, f), 'utf8').trim())
+      .join('\n\n'),
   });
 }
 

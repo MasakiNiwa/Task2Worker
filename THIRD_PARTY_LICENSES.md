@@ -39,6 +39,7 @@ Task2Worker が配布物に含めているサードパーティ製ライブラ�
 | [character-entities-legacy](https://github.com/wooorm/character-entities-legacy) | 3.0.0 | MIT |
 | [character-reference-invalid](https://github.com/wooorm/character-reference-invalid) | 2.0.1 | MIT |
 | [clsx](https://github.com/lukeed/clsx) | 2.1.1 | MIT |
+| [comlink](https://github.com/GoogleChromeLabs/comlink) | 4.4.2 | Apache-2.0 |
 | [comma-separated-tokens](https://github.com/wooorm/comma-separated-tokens) | 2.0.3 | MIT |
 | [cookie](https://github.com/jshttp/cookie) | 1.1.1 | MIT |
 | [csstype](https://github.com/frenic/csstype) | 3.2.3 | MIT |
@@ -51,6 +52,7 @@ Task2Worker が配布物に含めているサードパーティ製ライブラ�
 | [dexie](https://dexie.org) | 4.4.6 | Apache-2.0 |
 | [dexie-react-hooks](https://dexie.org) | 4.4.0 | Apache-2.0 |
 | [dom-helpers](https://github.com/react-bootstrap/dom-helpers#readme) | 5.2.1 | MIT |
+| [echarts](https://echarts.apache.org) | 6.1.0 | Apache-2.0 |
 | [escape-string-regexp](https://github.com/sindresorhus/escape-string-regexp) | 5.0.0 | MIT |
 | [estree-util-is-identifier-name](https://github.com/syntax-tree/estree-util-is-identifier-name) | 3.0.0 | MIT |
 | [extend](https://github.com/justmoon/node-extend) | 3.0.2 | MIT |
@@ -144,6 +146,7 @@ Task2Worker が配布物に含めているサードパーティ製ライブラ�
 | [tagged-tag](https://github.com/sindresorhus/tagged-tag) | 1.0.0 | MIT |
 | [trim-lines](https://github.com/wooorm/trim-lines) | 3.0.1 | MIT |
 | [trough](https://github.com/wooorm/trough) | 2.2.0 | MIT |
+| [tslib](https://www.typescriptlang.org/) | 2.3.0 | 0BSD |
 | [tslib](https://www.typescriptlang.org/) | 2.8.1 | 0BSD |
 | [type-fest](https://github.com/sindresorhus/type-fest) | 5.10.0 | (MIT OR CC0-1.0) |
 | [unified](https://unifiedjs.com) | 11.0.5 | MIT |
@@ -156,5 +159,6 @@ Task2Worker が配布物に含めているサードパーティ製ライブラ�
 | [use-sidecar](https://github.com/theKashey/use-sidecar) | 1.1.3 | MIT |
 | [vfile](https://github.com/vfile/vfile) | 6.0.3 | MIT |
 | [vfile-message](https://github.com/vfile/vfile-message) | 4.0.3 | MIT |
+| [zrender](https://github.com/ecomfe/zrender) | 6.1.0 | BSD-3-Clause |
 | [zustand](https://github.com/pmndrs/zustand) | 5.0.15 | MIT |
 | [zwitch](https://github.com/wooorm/zwitch) | 2.0.4 | MIT |
