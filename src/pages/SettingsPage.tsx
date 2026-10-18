@@ -4,6 +4,7 @@ import {
   Group,
   SegmentedControl,
   Select,
+  Switch,
   Stack,
   Text,
   Title,
@@ -117,6 +118,17 @@ export function SettingsPage() {
               onChange={(v) => v && settings.update({ dayStartHour: Number(v) })}
               allowDeselect={false}
             />
+          </Row>
+        </Section>
+
+        <Section title="分析">
+          <Row
+            label="GPU(WebGPU)で集計する"
+            description={
+              'gpu' in navigator ? 'この端末は WebGPU に対応しています' : 'この端末は WebGPU 非対応のため CPU で計算します'
+            }
+          >
+            <Switch checked={settings.useGpu} onChange={(e) => settings.update({ useGpu: e.currentTarget.checked })} />
           </Row>
         </Section>
 

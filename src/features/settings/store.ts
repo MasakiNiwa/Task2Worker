@@ -8,12 +8,15 @@ export interface Settings {
   fiscalYearStartMonth: number;
   /** 1日の切り替わり時刻 (0-23時)。深夜作業を前日扱いにしたい場合に使う */
   dayStartHour: number;
+  /** 分析で GPU (WebGPU) を使う */
+  useGpu: boolean;
 }
 
 export const defaultSettings: Settings = {
   weekStartsOn: 1,
   fiscalYearStartMonth: 4,
   dayStartHour: 0,
+  useGpu: true,
 };
 
 interface SettingsState extends Settings {
@@ -36,6 +39,6 @@ export const useSettings = create<SettingsState>()(
 
 /** React 外 (集計処理など) から現在の設定値を取り出す */
 export function getSettings(): Settings {
-  const { weekStartsOn, fiscalYearStartMonth, dayStartHour } = useSettings.getState();
-  return { weekStartsOn, fiscalYearStartMonth, dayStartHour };
+  const { weekStartsOn, fiscalYearStartMonth, dayStartHour, useGpu } = useSettings.getState();
+  return { weekStartsOn, fiscalYearStartMonth, dayStartHour, useGpu };
 }
