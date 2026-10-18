@@ -13,6 +13,7 @@ describe('App', () => {
     );
     expect(screen.getByLabelText('ダークモード切り替え')).toBeInTheDocument();
     expect(screen.getByLabelText('ヘルプ')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'ダッシュボード' })).toBeInTheDocument();
+    expect(await screen.findByText('まずはタスクを登録しましょう')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/github/i)).not.toBeInTheDocument();
   });
 });

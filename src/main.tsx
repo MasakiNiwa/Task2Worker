@@ -18,7 +18,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="dark">
       <ModalsProvider>
-        <Notifications position="top-center" />
+        <Notifications position="top-center" limit={2} autoClose={2500} />
         <App />
       </ModalsProvider>
     </MantineProvider>

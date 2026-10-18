@@ -27,7 +27,7 @@ export interface Task {
 export interface Completion {
   id: string;
   taskId: string;
-  /** 期間キー: 2026 / 2026-Q3 / 2026-10 / 2026-W42 / 2026-10-18 / once */
+  /** 期間キー: D2026-10-18 / W2026-10-12(週初日) / M2026-10 / FY2026-Q3 / FY2026 / once */
   periodKey: string;
   /** 期間内の何回目か (0 始まり) */
   slot: number;

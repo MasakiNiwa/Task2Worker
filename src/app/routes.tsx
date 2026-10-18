@@ -11,6 +11,7 @@ import {
 // 各画面は遅延読み込みして初回表示を軽くする
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const TasksPage = lazy(() => import('@/pages/TasksPage').then((m) => ({ default: m.TasksPage })));
+const TaskDetailPage = lazy(() => import('@/pages/TaskDetailPage').then((m) => ({ default: m.TaskDetailPage })));
 const NumbersPage = lazy(() => import('@/pages/NumbersPage').then((m) => ({ default: m.NumbersPage })));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
@@ -31,6 +32,7 @@ export interface AppRoute {
 export const appRoutes: AppRoute[] = [
   { path: '/', label: 'ダッシュボード', shortLabel: 'ホーム', icon: IconLayoutDashboard, element: <DashboardPage />, nav: true },
   { path: '/tasks', label: 'タスク', icon: IconListCheck, element: <TasksPage />, nav: true },
+  { path: '/tasks/:id', label: 'タスク詳細', icon: IconListCheck, element: <TaskDetailPage />, nav: false },
   { path: '/numbers', label: '番号', icon: IconHash, element: <NumbersPage />, nav: true },
   { path: '/analytics', label: '分析', icon: IconChartBar, element: <AnalyticsPage />, nav: true },
   { path: '/settings', label: '設定', icon: IconSettings, element: <SettingsPage />, nav: true },

@@ -17,6 +17,7 @@
   "dependencies": {
     "@mantine/core": "^9.7.3",
     "@mantine/dates": "^9.7.3",
+    "@mantine/form": "^9.7.3",
     "@mantine/hooks": "^9.7.3",
     "@mantine/modals": "^9.7.3",
     "@mantine/notifications": "^9.7.3",
@@ -26,7 +27,9 @@
     "dexie-react-hooks": "^4.4.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.4",
+    "remark-gfm": "^4.0.1",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
