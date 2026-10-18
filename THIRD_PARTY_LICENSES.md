@@ -118,6 +118,7 @@ Task2Worker が配布物に含めているサードパーティ製ライブラ�
 | [micromark-util-types](https://github.com/micromark/micromark/tree/main/packages/micromark-util-types) | 2.0.3 | MIT |
 | [ms](https://github.com/vercel/ms) | 2.1.3 | MIT |
 | [object-assign](https://github.com/sindresorhus/object-assign) | 4.1.1 | MIT |
+| [papaparse](https://www.papaparse.com/) | 5.7.0 | MIT |
 | [parse-entities](https://github.com/wooorm/parse-entities) | 4.0.2 | MIT |
 | [prop-types](https://facebook.github.io/react/) | 15.8.1 | MIT |
 | [property-information](https://github.com/wooorm/property-information) | 7.2.0 | MIT |
@@ -159,6 +160,10 @@ Task2Worker が配布物に含めているサードパーティ製ライブラ�
 | [use-sidecar](https://github.com/theKashey/use-sidecar) | 1.1.3 | MIT |
 | [vfile](https://github.com/vfile/vfile) | 6.0.3 | MIT |
 | [vfile-message](https://github.com/vfile/vfile-message) | 4.0.3 | MIT |
+| [workbox-core](https://github.com/GoogleChrome/workbox) | 7.4.1 | MIT |
+| [workbox-precaching](https://github.com/GoogleChrome/workbox) | 7.4.1 | MIT |
+| [workbox-routing](https://github.com/GoogleChrome/workbox) | 7.4.1 | MIT |
+| [workbox-strategies](https://github.com/GoogleChrome/workbox) | 7.4.1 | MIT |
 | [zrender](https://github.com/ecomfe/zrender) | 6.1.0 | BSD-3-Clause |
 | [zustand](https://github.com/pmndrs/zustand) | 5.0.15 | MIT |
 | [zwitch](https://github.com/wooorm/zwitch) | 2.0.4 | MIT |

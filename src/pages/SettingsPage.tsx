@@ -1,6 +1,7 @@
 import {
   Button,
   Card,
+  FileButton,
   Group,
   SegmentedControl,
   Select,
@@ -13,11 +14,19 @@ import {
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconTrash } from '@tabler/icons-react';
+import { IconDownload, IconFileSpreadsheet, IconTrash, IconUpload } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useSettings } from '@/features/settings/store';
 import { clearAllData } from '@/features/data/clearAll';
+import {
+  BackupError,
+  exportCompletionsCsv,
+  exportJson,
+  exportNumbersCsv,
+  parseBackup,
+  restoreBackup,
+} from '@/features/data/backup';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -71,6 +80,40 @@ export function SettingsPage() {
         notifications.show({ message: 'すべてのデータを初期化しました' });
       },
     });
+
+  const importFile = async (file: File | null) => {
+    if (!file) return;
+    try {
+      const backup = parseBackup(await file.text());
+      const d = backup.data;
+      modals.openConfirmModal({
+        title: 'バックアップから復元しますか?',
+        children: (
+          <Stack gap={4}>
+            <Text size="sm">
+              {new Date(backup.exportedAt).toLocaleString('ja-JP')} のバックアップです。
+              現在のデータはすべて置き換えられます。
+            </Text>
+            <Text size="sm" c="dimmed">
+              タスク {d.tasks.length}件 / 実施記録 {d.completions.length}件 / 番号の種類 {d.numberTypes.length}件 / 番号{' '}
+              {d.numberRecords.length}件
+            </Text>
+          </Stack>
+        ),
+        labels: { confirm: '復元する', cancel: 'キャンセル' },
+        onConfirm: async () => {
+          await restoreBackup(backup);
+          notifications.show({ message: 'バックアップから復元しました' });
+        },
+      });
+    } catch (e) {
+      notifications.show({
+        color: 'red',
+        title: '読み込めませんでした',
+        message: e instanceof BackupError ? e.message : String(e),
+      });
+    }
+  };
 
   return (
     <>
@@ -134,8 +177,42 @@ export function SettingsPage() {
 
         <Section title="データ">
           <Text size="sm" c="dimmed">
-            データはこの端末のブラウザ内にのみ保存されます。
+            データはこの端末のブラウザ内にのみ保存されます。機種変更やブラウザのデータ削除に備えて、定期的にバックアップしてください。
           </Text>
+          <Row label="バックアップ" description="すべてのデータと設定を JSON ファイルに保存します">
+            <Button variant="default" leftSection={<IconDownload size={16} />} onClick={() => void exportJson()}>
+              エクスポート
+            </Button>
+          </Row>
+          <Row label="復元" description="バックアップファイルからデータを読み込みます(現在のデータは置き換え)">
+            <FileButton onChange={(f) => void importFile(f)} accept="application/json,.json">
+              {(props) => (
+                <Button variant="default" leftSection={<IconUpload size={16} />} {...props}>
+                  インポート
+                </Button>
+              )}
+            </FileButton>
+          </Row>
+          <Row label="CSV 書き出し" description="Excel などで開ける形式で書き出します">
+            <Group gap="xs">
+              <Button
+                variant="default"
+                size="xs"
+                leftSection={<IconFileSpreadsheet size={14} />}
+                onClick={() => void exportCompletionsCsv()}
+              >
+                実施記録
+              </Button>
+              <Button
+                variant="default"
+                size="xs"
+                leftSection={<IconFileSpreadsheet size={14} />}
+                onClick={() => void exportNumbersCsv()}
+              >
+                番号
+              </Button>
+            </Group>
+          </Row>
           <Row label="全データ初期化" description="タスク・実施記録・番号・設定をすべて削除します">
             <Button color="red" variant="light" leftSection={<IconTrash size={16} />} onClick={confirmClear}>
               クリア

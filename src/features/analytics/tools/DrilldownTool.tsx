@@ -109,8 +109,10 @@ export default function DrilldownTool() {
                   <Table.Td w="40%">
                     <Progress value={(r.count / result.total) * 100} size="sm" />
                   </Table.Td>
-                  <Table.Td ta="right" w={64}>
-                    <Text size="sm">{r.count}回</Text>
+                  <Table.Td ta="right" w={80}>
+                    <Text size="sm" style={{ whiteSpace: 'nowrap' }}>
+                      {r.count}回
+                    </Text>
                   </Table.Td>
                 </Table.Tr>
               ))}
