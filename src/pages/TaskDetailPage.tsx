@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Button, Card, Group, Menu, Stack, Text, Timeline, Title } from '@mantine/core';
+import { ActionIcon, Badge, Button, Card, Group, Menu, SimpleGrid, Stack, Text, Timeline, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
@@ -8,8 +8,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Markdown } from '@/components/common/Markdown';
 import { db } from '@/db/db';
-import { useTaskStatus } from '@/features/tasks/hooks';
-import { daysLeft, labelOfPeriodKey, recurrenceLabels } from '@/features/tasks/period';
+import { usePeriodSettings, useTaskStatus, useToday } from '@/features/tasks/hooks';
+import { streakOf } from '@/features/tasks/stats';
+import { ActivityHeatmap } from '@/components/common/ActivityHeatmap';
+import { daysLeft, labelOfPeriodKey, logicalDate, recurrenceLabels } from '@/features/tasks/period';
 import { deleteTask, updateTask } from '@/features/tasks/repository';
 import { TaskSlots } from '@/features/tasks/components/TaskSlots';
 import { TaskFormModal } from '@/features/tasks/components/TaskFormModal';
@@ -21,6 +23,8 @@ export function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const status = useTaskStatus(id);
+  const today = useToday();
+  const settings = usePeriodSettings();
   const [editing, { open: openEdit, close: closeEdit }] = useDisclosure(false);
   const history = useLiveQuery(
     () => (id ? db.completions.where('taskId').equals(id).reverse().sortBy('doneAt') : []),
@@ -40,7 +44,16 @@ export function TaskDetailPage() {
   }
 
   const { task, period, doneCount, completed } = status;
-  const recent = (history ?? []).slice(0, HISTORY_LIMIT);
+  const all = history ?? [];
+  const recent = all.slice(0, HISTORY_LIMIT);
+  const streak = streakOf(task, all, today, settings);
+  const dailyCounts = new Map<string, number>();
+  for (const c of all) {
+    const key = logicalDate(c.doneAt, settings).format('YYYY-MM-DD');
+    dailyCounts.set(key, (dailyCounts.get(key) ?? 0) + 1);
+  }
+  const lastDone = all[0]?.doneAt;
+  const unit = task.recurrence === 'daily' ? '日' : task.recurrence === 'weekly' ? '週' : task.recurrence === 'monthly' ? 'か月' : task.recurrence === 'quarterly' ? '四半期' : '年';
   const byPeriod = groupBy(recent, (c) => c.periodKey);
 
   const confirmDelete = () =>
@@ -119,7 +132,7 @@ export function TaskDetailPage() {
                 ? task.dueDate
                   ? `期限 ${dayjs(task.dueDate).format('YYYY/M/D')}`
                   : '期限なし'
-                : `今の期間: ${period.label}(残り${daysLeft(period, dayjs())}日)・${doneCount}/${task.timesPerPeriod}回`}
+                : `今の期間: ${period.label}(残り${daysLeft(period, today)}日)・${doneCount}/${task.timesPerPeriod}回`}
             </Text>
             <Group gap="xs">
               {completed && (
@@ -144,6 +157,29 @@ export function TaskDetailPage() {
             手順やメモはまだありません。「編集」から追加できます。
           </Text>
         )}
+      </Card>
+
+      <Card>
+        <Title order={3} size="h5" mb="sm">
+          実績
+        </Title>
+        <SimpleGrid cols={3} mb="md">
+          {[
+            { label: '連続達成', value: task.recurrence === 'once' ? '—' : `${streak}${unit}` },
+            { label: '累計実施', value: `${all.length}回` },
+            { label: '最終実施', value: lastDone ? dayjs(lastDone).format('M/D HH:mm') : '—' },
+          ].map((m) => (
+            <Stack key={m.label} gap={0}>
+              <Text size="xs" c="dimmed">
+                {m.label}
+              </Text>
+              <Text fw={600} size="md">
+                {m.value}
+              </Text>
+            </Stack>
+          ))}
+        </SimpleGrid>
+        <ActivityHeatmap counts={dailyCounts} today={today} weekStartsOn={settings.weekStartsOn} />
       </Card>
 
       <Card>

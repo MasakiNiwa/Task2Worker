@@ -48,6 +48,11 @@ export function TaskRow({ status, showRecurrence = true }: { status: TaskStatus;
                 期限 {dayjs(task.dueDate).format('M/D')}
               </Text>
             )}
+            {status.previousMissed && !completed && (
+              <Badge size="xs" color="orange" variant="light">
+                前回未完了
+              </Badge>
+            )}
             {task.archived && (
               <Badge size="xs" color="gray" variant="outline">
                 アーカイブ

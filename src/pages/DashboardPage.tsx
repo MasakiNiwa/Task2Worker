@@ -1,4 +1,5 @@
-import { Button, Card, Group, RingProgress, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Button, Card, Chip, Group, RingProgress, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { useState } from 'react';
 import { IconConfetti, IconListCheck, IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -10,8 +11,9 @@ import { groupBy } from '@/lib/collections';
 
 const rank = (s: TaskStatus) => recurrenceOrder.indexOf(s.task.recurrence);
 
-/** 期限の近い単発タスク → 周期の短いタスクの順 */
+/** 前回やり残したもの → 期限の近い単発タスク → 周期の短いタスクの順 */
 function byUrgency(a: TaskStatus, b: TaskStatus): number {
+  if (a.previousMissed !== b.previousMissed) return a.previousMissed ? -1 : 1;
   if (a.task.recurrence === 'once' && b.task.recurrence === 'once') {
     return (a.task.dueDate ?? '9999').localeCompare(b.task.dueDate ?? '9999');
   }
@@ -20,9 +22,16 @@ function byUrgency(a: TaskStatus, b: TaskStatus): number {
 
 export function DashboardPage() {
   const today = useToday();
-  const statuses = useTaskStatuses();
+  const allStatuses = useTaskStatuses();
+  const [tags, setTags] = useState<string[]>([]);
 
-  if (statuses === undefined) return null;
+  if (allStatuses === undefined) return null;
+
+  const allTags = [...new Set(allStatuses.flatMap((s) => s.task.tags))].sort();
+  const activeTags = tags.filter((t) => allTags.includes(t));
+  const statuses = activeTags.length
+    ? allStatuses.filter((s) => s.task.tags.some((t) => activeTags.includes(t)))
+    : allStatuses;
 
   const todo = statuses.filter((s) => !s.completed).sort(byUrgency);
   const done = statuses.filter((s) => s.completed).sort(byUrgency);
@@ -31,7 +40,18 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader title={today.format('M月D日(dd)')} description="今やるべきことを一目で" />
-      {statuses.length === 0 ? (
+      {allTags.length > 0 && (
+        <Chip.Group multiple value={activeTags} onChange={setTags}>
+          <Group gap={6} mb="md">
+            {allTags.map((t) => (
+              <Chip key={t} value={t} size="xs" variant="outline">
+                {t}
+              </Chip>
+            ))}
+          </Group>
+        </Chip.Group>
+      )}
+      {allStatuses.length === 0 ? (
         <EmptyState
           icon={<IconListCheck size={26} stroke={1.5} />}
           title="まずはタスクを登録しましょう"
